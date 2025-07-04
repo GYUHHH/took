@@ -35,7 +35,7 @@ async function addMessage() {
     const text = input.value.trim();
     
     if (text === '') {
-        alert('메시지를 입력해주세요!');
+        alert('메시지를 입력해주세요');
         return;
     }
     
