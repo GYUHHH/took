@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메시지 보드 - Supabase 연동</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Verdana, Arial, sans-serif;
+            font-size: 11px;
+            background: #ffffff;
+            color: #000000;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 750px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 0;
+        }
+        
+        .content {
+            padding: 15px;
+            background: #ffffff;
+        }
+        
+        .input-section {
+            background: #ffffff;
+            border: none;
+            padding: 0;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .input-field {
+            flex: 1;
+            padding: 3px 5px;
+            border: 2px inset #cccccc;
+            font-family: Verdana, Arial, sans-serif;
+            font-size: 11px;
+            background: #ffffff;
+            color: #000000;
+            resize: none;
+            height: 46px;
+            max-height: 100px;
+            overflow-y: auto;
+            line-height: 1.2;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            background: #ffffff;
+        }
+        
+        .submit-btn {
+            padding: 4px 12px;
+            background: #ffffff;
+            color: #000000;
+            border: 2px solid #cccccc;
+            font-family: Verdana, Arial, sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            min-height: 46px;
+            align-self: stretch;
+        }
+        
+        .submit-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .submit-btn:active {
+            border: 2px inset #cccccc;
+        }
+        
+        .submit-btn:disabled {
+            background: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+        }
+        
+        .messages-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: none;
+            background: #ffffff;
+        }
+        
+        .message {
+            border-bottom: 1px dotted #cccccc;
+            padding: 8px 10px;
+            background: #ffffff;
+        }
+        
+        .message:nth-child(even) {
+            background: #ffffff;
+        }
+        
+        .message:hover {
+            background: #f0f0f0;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 10px;
+        }
+        
+        .message-number {
+            color: #000000;
+            font-weight: bold;
+        }
+        
+        .message-time {
+            color: #666666;
+            font-style: italic;
+        }
+        
+        .message-text {
+            font-size: 11px;
+            line-height: 1.4;
+            color: #000000;
+            word-wrap: break-word;
+        }
+        
+        .no-messages {
+            text-align: center;
+            color: #999999;
+            font-style: italic;
+            padding: 30px 20px;
+            font-size: 11px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666666;
+            font-style: italic;
+            padding: 20px;
+            font-size: 11px;
+        }
+        
+        .error {
+            background: #ffe6e6;
+            color: #cc0000;
+            padding: 10px;
+            border: 1px solid #ff9999;
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+        
+        .footer {
+            background: #ffffff;
+            border-top: 1px solid #cccccc;
+            padding: 5px 15px;
+            text-align: center;
+            font-size: 10px;
+            color: #666666;
+            margin-top: 20px;
+        }
+        
+        .visitor-counter {
+            background: #ffffff;
+            color: #000000;
+            padding: 2px 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            border: 1px solid #cccccc;
+            display: inline-block;
+            margin: 0 5px;
+        }
+        
+        .status {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            <div id="status" class="status">데이터베이스 연결 중...</div>
+            
+            <div class="input-section">
+                <textarea 
+                    class="input-field" 
+                    id="messageInput" 
+                    placeholder="여기에 메시지를 입력하세요..."
+                    rows="3"
+                    maxlength="500"
+                ></textarea>
+                <button class="submit-btn" id="submitBtn" onclick="addMessage()">📝 전송하기</button>
+            </div>
+            
+            <div class="messages-container" id="messagesContainer">
+                <div class="loading">메시지를 불러오는 중...</div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            방문자수: <span class="visitor-counter" id="totalVisitors">000000</span> | 
+            오늘: <span class="visitor-counter" id="todayVisitors">000</span> | 
+            어제: <span class="visitor-counter" id="yesterdayVisitors">000</span> | 
+            최대: <span class="visitor-counter" id="maxVisitors">000</span>
+            <br>
+            Copyright ⓒ 2025 Took. All rights reserved.
+        </div>
+    </div>
+
+    <!-- Supabase JavaScript SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 메인 스크립트 -->
+    <script src="app.js"></script>
+</body>
+</html>
