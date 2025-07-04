@@ -290,7 +290,7 @@ async function initializeApp() {
             // 입력창에 포커스
             document.getElementById('messageInput').focus();
             
-            updateStatus('준비 완료');
+            updateStatus('');
         }
         
     } catch (error) {
