@@ -66,7 +66,7 @@ async function addMessage() {
         // 메시지 목록 새로고침
         await loadMessages();
         
-        updateStatus('메시지가 전송되었습니다.');
+        updateStatus('');
         
     } catch (error) {
         console.error('메시지 전송 실패:', error);
